@@ -18,11 +18,6 @@ const drive = google.drive('v3');
 const stream = require('stream');
 const app = express();
 
-const thumbnailsDir = path.join(__dirname, 'thumbnails');
-if (!fs.existsSync(thumbnailsDir)) {
-    fs.mkdirSync(thumbnailsDir, { recursive: true });
-}
-
 // ================== KONFIGURASI UTAMA ==================
 
 // Fungsi untuk menghasilkan session secret secara acak
