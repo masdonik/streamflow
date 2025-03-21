@@ -716,28 +716,23 @@ app.post('/start-stream', async (req, res) => {
       });
     }
 
-    const command = ffmpeg(streamFilePath)
-      .inputFormat('mp4')
-      .inputOptions(['-re', ...(loop === 'true' ? ['-stream_loop -1'] : [])])
-      .outputOptions([
-        `-r ${fps || 30}`,
-        '-threads 2',
-        '-x264-params "nal-hrd=cbr"',
-        '-c:v libx264',
-        '-preset veryfast',
-        '-tune zerolatency',
-        `-b:v ${bitrate}k`,
-        `-maxrate ${bitrate}k`,
-        `-bufsize ${bitrate * 2}k`,
-        '-pix_fmt yuv420p',
-        '-g 60',
-        `-vf scale=${resolution}`,
-        '-c:a aac',
-        '-b:a 128k',
-        '-ar 44100',
-        '-f flv'
-      ])
-      .output(`${rtmp_url}/${stream_key}`);
+	const command = ffmpeg(streamFilePath)
+		.inputFormat('mp4')  // Menentukan format input
+		.inputOptions(['-re', ...(loop === 'true' ? ['-stream_loop -1'] : [])])
+		.outputOptions([
+			`-r ${fps || 30}`,  // Setel frame rate (opsional)
+			'-threads 2',
+			'-x264-params "nal-hrd=cbr"',
+			'-c:v copy',  // Menyalin stream video tanpa encoding ulang
+			'-c:a copy',  // Menyalin stream audio tanpa encoding ulang
+			'-f flv',  // Format output untuk streaming RTMP
+			`-maxrate ${bitrate}k`,  // Setel bitrate maksimum (opsional)
+			`-bufsize ${bitrate * 2}k`,  // Setel ukuran buffer (opsional)
+			'-g 60',  // Ukuran Group of Pictures (GOP)
+			'-pix_fmt yuv420p',  // Format pixel yang dibutuhkan untuk streaming video
+			`-vf scale=${resolution}`,  // Resolusi untuk output stream
+		])
+		.output(`${rtmp_url}/${stream_key}`);  // URL output untuk streaming RTMP
 
     const duration = parseInt(schedule_duration, 10) * 60 * 1000;
     if (schedule_enabled === '1' && duration) {
