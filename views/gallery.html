@@ -11,32 +11,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
     <style>
-        .video-thumbnail {
-            background: #1a1a1a;
-            position: relative;
-        }
-
-        .video-thumbnail img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-        }
-
-        .video-thumbnail img[src="/img/thumbnail-error.jpg"] {
-            opacity: 0.5;
-        }
-
-        .fade-enter {
-            opacity: 0;
-            transform: translateY(10px);
-        }
-
-        .fade-enter-active {
-            opacity: 1;
-            transform: translateY(0);
-            transition: opacity 300ms, transform 300ms;
-        }
-
         .loading-overlay {
             position: absolute;
             inset: 0;
@@ -52,22 +26,25 @@
 <body class="bg-gradient min-h-screen flex flex-col">
     <!-- Navigation Bar -->
     <nav class="bg-nav fixed top-0 left-0 w-full z-50">
-        <div class="flex justify-between items-center h-16 px-4"> <a href="/dashboard" class="pl-3"> <img
-                    src="/img/logo.svg" alt="Stream Flow Logo" class="h-9 w-auto cursor-pointer" /> </a>
+        <div class="flex justify-between items-center h-16 px-4">
+            <a href="/dashboard" class="pl-3">
+                <img src="/img/logo.svg" alt="Stream Flow Logo" class="h-9 w-auto cursor-pointer" />
+            </a>
             <div class="flex items-center">
-                <div class="relative"> <img src="/img/avatar.jpg" alt="Profile" id="profileMenu"
+                <div class="relative">
+                    <img src="/img/avatar.jpg" alt="Profile" id="profileMenu"
                         class="w-9 h-9 rounded-full cursor-pointer object-cover border-2 border-white hover:border-blue-500 transition-all">
                     <div id="submenu" class="hidden absolute right-0 mt-2 bg-white rounded-md shadow-lg py-1"
-                        style="width: 140px;"> <a href="/gallery"
-                            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"> <i
-                                class="fa-regular fa-images mr-1"></i> Galeri </a> <a href="/history"
-                            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"> <i
-                                class="fa-solid fa-clock-rotate-left mr-1"></i> History </a>
-                        <div class="border-t border-gray-200 my-1"></div> <a href="/settings" id="settingsMenu"
-                            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"> <i
-                                class="fa-solid fa-gear mr-1"></i> Pengaturan </a> <a href="/logout"
-                            class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50"> <i
-                                class="fa-solid fa-arrow-right-from-bracket mr-1"></i> Keluar </a>
+                        style="width: 140px;">
+                        <a href="/gallery" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            <i class="fa-regular fa-images mr-1"></i> Galeri </a>
+                        <a href="/history" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            <i class="fa-solid fa-clock-rotate-left mr-1"></i> History </a>
+                        <div class="border-t border-gray-200 my-1"></div>
+                        <a href="/settings" id="settingsMenu" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            <i class="fa-solid fa-gear mr-1"></i> Pengaturan </a>
+                        <a href="/logout" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+                            <i class="fa-solid fa-arrow-right-from-bracket mr-1"></i> Keluar </a>
                     </div>
                 </div>
             </div>
@@ -303,15 +280,6 @@
                         target="_blank" rel="noopener noreferrer">
                         <i class="fa-solid fa-mug-hot mr-1"></i>Traktir Kopi
                     </a>
-                    <div
-                        class="absolute bottom-full mb-2 right-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 w-max max-w-[200px] text-center">
-                        <div class="bg-white text-gray-800 text-xs px-3 py-1.5 rounded-md shadow-lg">
-                            ☺️ Thank you udah support<br>pengembangan aplikasi ini
-                        </div>
-                        <div
-                            class="absolute top-full right-2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-l-transparent border-r-4 border-r-transparent border-t-4 border-t-white">
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -325,11 +293,9 @@
         const emptyState = document.getElementById('emptyState');
         const totalVideos = document.getElementById('totalVideos');
         const storageUsed = document.getElementById('storageUsed');
-        const uploadDriveBtn = document.getElementById('uploadDrive');
 
         let currentPage = 1;
         let loading = false;
-        let hasMore = true;
 
         async function loadVideos(page = 1) {
             if (loading) return;
@@ -356,56 +322,38 @@
 
                 emptyState.classList.add('hidden');
                 videoGrid.innerHTML = data.videos.map(video => `
-                <div class="group relative bg-gray-800 rounded-lg overflow-hidden hover:bg-gray-700/80 transition-all">
-                    <div class="relative aspect-video bg-black">
-                        <div class="video-thumbnail w-full h-full">
-                            <img 
-                                src="/thumbnails/${video.name}" 
-                                alt="${video.name}"
-                                class="w-full h-full object-cover"
-                                onerror="this.src='/img/thumbnail-error.jpg'"
-                            />
-                            <button 
-                                class="delete-button absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-all duration-200 bg-red-500 hover:bg-red-600 w-8 h-8 rounded-full flex items-center justify-center transform scale-90 hover:scale-100 cursor-pointer z-30"
-                                data-filename="${video.name}"
-                                type="button"
-                            >
-                                <i class="fa-solid fa-trash-can text-white text-sm pointer-events-none"></i>
-                            </button>
-                            <div class="absolute bottom-2 right-2 bg-black/80 px-2 py-0.5 rounded text-white text-xs font-medium">
-                                ${video.duration || '00:00'}
-                            </div>
-                            <div class="absolute inset-0 flex items-center justify-center">
-                                <button class="play-button opacity-0 group-hover:opacity-100 transition-all duration-300 transform scale-90 group-hover:scale-100">
-                                    <i class="fa-solid fa-play text-white text-4xl opacity-80 hover:opacity-100"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <video class="hidden">
-                            <source src="${video.path}" type="video/mp4">
-                        </video>
-                    </div>
-                    <div class="p-3 bg-white"> <!-- Changed: Added bg-white -->
-                        <h3 class="font-medium text-gray-900 truncate mb-2" title="${video.name}"> <!-- Changed: text-gray-900 -->
-                            ${video.name}
-                        </h3>
-                        <div class="flex justify-between items-center text-xs text-gray-600"> <!-- Changed: text-gray-600 -->
-                            <div class="flex items-center">
-                                <i class="fa-regular fa-calendar mr-1.5"></i>
-                                <span>${new Date(video.modified).toLocaleString('id-ID', {
+                    <div class="group relative bg-gray-800 rounded-lg overflow-hidden hover:bg-gray-700/80 transition-all">
+                        <div class="p-3 bg-white">
+                            <h3 class="font-medium text-gray-900 truncate mb-2" title="${video.name}">
+                                ${video.name}
+                            </h3>
+                            <div class="flex justify-between items-center text-xs text-gray-600">
+                                <div class="flex items-center">
+                                    <i class="fa-regular fa-calendar mr-1.5"></i>
+                                    <span>${new Date(video.modified).toLocaleString('id-ID', {
                     year: 'numeric',
                     month: 'short',
                     day: 'numeric'
                 })}</span>
-                            </div>
-                            <div class="flex items-center">
-                                <i class="fa-solid fa-hard-drive mr-1.5"></i>
-                                <span>${video.size} MB</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <i class="fa-solid fa-hard-drive mr-1.5"></i>
+                                    <span>${video.size} MB</span>
+                                </div>
                             </div>
                         </div>
+                        <div class="flex justify-between gap-2 p-3">
+                            <button class="delete-button px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg"
+                                data-filename="${video.name}">
+                                <i class="fa-solid fa-trash-can"></i> Delete
+                            </button>
+                            <button class="rename-button px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg"
+                                data-filename="${video.name}">
+                                <i class="fa-solid fa-pen"></i> Rename
+                            </button>
+                        </div>
                     </div>
-                </div>
-            `).join('');
+                `).join('');
 
                 const deleteButtons = document.querySelectorAll('.delete-button');
                 deleteButtons.forEach(button => {
@@ -460,8 +408,48 @@
                     });
                 });
 
-                renderPagination(data.currentPage, data.totalPages);
-                initializeVideoPreview();
+                const renameButtons = document.querySelectorAll('.rename-button');
+                renameButtons.forEach(button => {
+                    button.addEventListener('click', async (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+
+                        const fileName = button.dataset.filename;
+                        const newName = prompt('Masukkan nama baru untuk video:', fileName);
+
+                        if (newName && newName !== fileName) {
+                            try {
+                                const response = await fetch('/rename-video', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify({ oldName: fileName, newName: newName })
+                                });
+
+                                const data = await response.json();
+
+                                if (!response.ok) throw new Error(data.message || 'Gagal merename video');
+                                await loadVideos(currentPage);
+
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Berhasil!',
+                                    text: 'Video berhasil diubah namanya',
+                                    showConfirmButton: false,
+                                    timer: 1500
+                                });
+                            } catch (error) {
+                                console.error('Error renaming video:', error);
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Error!',
+                                    text: error.message || 'Gagal mengubah nama video'
+                                });
+                            }
+                        }
+                    });
+                });
 
             } catch (error) {
                 console.error('Error loading videos:', error);
