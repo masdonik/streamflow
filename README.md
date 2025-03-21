@@ -57,7 +57,7 @@ StreamFlow adalah aplikasi live streaming yang memungkinkan kamu untuk melakukan
 
 4. **Clone Repositori:**
    ```bash
-   git clone https://github.com/bangtutorial/streamflow/
+   git clone https://github.com/masdonik/streamflow/
    cd streamflow
    ```
 
