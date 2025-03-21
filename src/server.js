@@ -18,6 +18,11 @@ const drive = google.drive('v3');
 const stream = require('stream');
 const app = express();
 
+const thumbnailsDir = path.join(__dirname, 'thumbnails');
+if (!fs.existsSync(thumbnailsDir)) {
+    fs.mkdirSync(thumbnailsDir, { recursive: true });
+}
+
 // ================== KONFIGURASI UTAMA ==================
 
 // Fungsi untuk menghasilkan session secret secara acak
@@ -146,9 +151,17 @@ app.get('/api/history', requireAuthAPI, (req, res) => {
 
 app.delete('/delete-history/:id', requireAuthAPI, (req, res) => {
   const containerId = req.params.id;
+
+  // Hentikan stream jika masih berjalan
+  if (streams[containerId]) {
+    streams[containerId].process.kill('SIGTERM'); // Menghentikan proses streaming
+    delete streams[containerId];
+  }
+
+  // Hapus data container dari database
   database.deleteStreamContainer(containerId, (err) => {
-    if (err) return sendError(res, err.message);
-    res.json({ message: 'History streaming berhasil dihapus' });
+    if (err) return sendError(res, err.message);  // Jika ada error, kirimkan pesan kesalahan
+    res.json({ message: 'History streaming berhasil dihapus' });  // Konfirmasi penghapusan berhasil
   });
 });
 
@@ -712,22 +725,16 @@ app.post('/start-stream', async (req, res) => {
     }
 
 	const command = ffmpeg(streamFilePath)
-		.inputFormat('mp4')  // Menentukan format input
-		.inputOptions(['-re', ...(loop === 'true' ? ['-stream_loop -1'] : [])])
-		.outputOptions([
-			`-r ${fps || 30}`,  // Setel frame rate (opsional)
-			'-threads 2',
-			'-x264-params "nal-hrd=cbr"',
-			'-c:v copy',  // Menyalin stream video tanpa encoding ulang
-			'-c:a copy',  // Menyalin stream audio tanpa encoding ulang
-			'-f flv',  // Format output untuk streaming RTMP
-			`-maxrate ${bitrate}k`,  // Setel bitrate maksimum (opsional)
-			`-bufsize ${bitrate * 2}k`,  // Setel ukuran buffer (opsional)
-			'-g 60',  // Ukuran Group of Pictures (GOP)
-			'-pix_fmt yuv420p',  // Format pixel yang dibutuhkan untuk streaming video
-			`-vf scale=${resolution}`,  // Resolusi untuk output stream
-		])
-		.output(`${rtmp_url}/${stream_key}`);  // URL output untuk streaming RTMP
+	  .inputFormat('mp4')
+	  .inputOptions(['-re', ...(loop === 'true' ? ['-stream_loop -1'] : [])])
+	  .outputOptions([
+		`-r ${fps || 30}`,
+		'-threads 2',
+		'-c:v copy',         // Menyalin stream video tanpa re-encoding
+		'-c:a copy',         // Menyalin stream audio tanpa re-encoding
+		'-f flv'             // Mengoutputkan ke format FLV untuk streaming
+	  ])
+	  .output(`${rtmp_url}/${stream_key}`);
 
     const duration = parseInt(schedule_duration, 10) * 60 * 1000;
     if (schedule_enabled === '1' && duration) {
@@ -1036,6 +1043,61 @@ for (const iface of Object.values(ifaces)) {
   }
   if (ipAddress !== 'localhost') break;
 }
+
+
+async function generateThumbnail(videoPath, outputPath) {
+  return new Promise((resolve, reject) => {
+    ffmpeg(videoPath)
+      .screenshots({
+        timestamps: [0],
+        filename: 'thumbnail.jpg',
+        folder: path.dirname(outputPath)
+      })
+      .on('end', async () => {
+        await sharp(path.join(path.dirname(outputPath), 'thumbnail.jpg'))
+          .resize(320, 180)
+          .jpeg({ quality: 80 })
+          .toFile(outputPath);
+        resolve();
+      })
+      .on('error', reject);
+  });
+};
+
+// Endpoint untuk generate thumbnail
+app.get('/thumbnails/:filename', async (req, res) => {
+    const videoPath = path.join(__dirname, 'uploads', req.params.filename);
+    const thumbnailPath = path.join(__dirname, 'thumbnails', `${req.params.filename}.jpg`);
+    const thumbnailsDir = path.join(__dirname, 'thumbnails');
+    if (!fs.existsSync(thumbnailsDir)) {
+        fs.mkdirSync(thumbnailsDir, { recursive: true });
+    }
+
+    try {
+        if (!fs.existsSync(thumbnailPath)) {
+            if (!fs.existsSync(videoPath)) {
+                return res.status(404).send('Video not found');
+            }
+
+            await new Promise((resolve, reject) => {
+                ffmpeg(videoPath)
+                    .screenshots({
+                        count: 1,
+                        folder: thumbnailsDir,
+                        filename: `${req.params.filename}.jpg`,
+                        size: '480x270'
+                    })
+                    .on('end', resolve)
+                    .on('error', reject);
+            });
+        }
+
+        res.sendFile(thumbnailPath);
+    } catch (error) {
+        console.error('Error handling thumbnail:', error);
+        res.status(500).send('Error generating thumbnail');
+    }
+});
 
 // Endpoint untuk Google Drive API key
 app.get('/api/drive-api-key', requireAuthAPI, async (req, res) => {
