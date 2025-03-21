@@ -1042,61 +1042,6 @@ for (const iface of Object.values(ifaces)) {
   if (ipAddress !== 'localhost') break;
 }
 
-
-async function generateThumbnail(videoPath, outputPath) {
-  return new Promise((resolve, reject) => {
-    ffmpeg(videoPath)
-      .screenshots({
-        timestamps: [0],
-        filename: 'thumbnail.jpg',
-        folder: path.dirname(outputPath)
-      })
-      .on('end', async () => {
-        await sharp(path.join(path.dirname(outputPath), 'thumbnail.jpg'))
-          .resize(320, 180)
-          .jpeg({ quality: 80 })
-          .toFile(outputPath);
-        resolve();
-      })
-      .on('error', reject);
-  });
-};
-
-// Endpoint untuk generate thumbnail
-app.get('/thumbnails/:filename', async (req, res) => {
-    const videoPath = path.join(__dirname, 'uploads', req.params.filename);
-    const thumbnailPath = path.join(__dirname, 'thumbnails', `${req.params.filename}.jpg`);
-    const thumbnailsDir = path.join(__dirname, 'thumbnails');
-    if (!fs.existsSync(thumbnailsDir)) {
-        fs.mkdirSync(thumbnailsDir, { recursive: true });
-    }
-
-    try {
-        if (!fs.existsSync(thumbnailPath)) {
-            if (!fs.existsSync(videoPath)) {
-                return res.status(404).send('Video not found');
-            }
-
-            await new Promise((resolve, reject) => {
-                ffmpeg(videoPath)
-                    .screenshots({
-                        count: 1,
-                        folder: thumbnailsDir,
-                        filename: `${req.params.filename}.jpg`,
-                        size: '480x270'
-                    })
-                    .on('end', resolve)
-                    .on('error', reject);
-            });
-        }
-
-        res.sendFile(thumbnailPath);
-    } catch (error) {
-        console.error('Error handling thumbnail:', error);
-        res.status(500).send('Error generating thumbnail');
-    }
-});
-
 // Endpoint untuk Google Drive API key
 app.get('/api/drive-api-key', requireAuthAPI, async (req, res) => {
   try {
