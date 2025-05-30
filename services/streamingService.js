@@ -54,41 +54,15 @@ async function buildFFmpegArgs(stream) {
   const rtmpUrl = `${stream.rtmp_url.replace(/\/$/, '')}/${stream.stream_key}`;
   const loopOption = stream.loop_video ? '-stream_loop' : '-stream_loop 0';
   const loopValue = stream.loop_video ? '-1' : '0';
-  if (!stream.use_advanced_settings) {
-    return [
-      '-hwaccel', 'none',
-      '-loglevel', 'error',
-      '-re',
-      '-fflags', '+genpts+igndts',
-      loopOption, loopValue,
-      '-i', videoPath,
-      '-c:v', 'copy',
-      '-c:a', 'copy',
-      '-f', 'flv',
-      rtmpUrl
-    ];
-  }
-  const resolution = stream.resolution || '1280x720';
-  const bitrate = stream.bitrate || 2500;
-  const fps = stream.fps || 30;
   return [
     '-hwaccel', 'none',
     '-loglevel', 'error',
     '-re',
+    '-fflags', '+genpts+igndts',
     loopOption, loopValue,
     '-i', videoPath,
-    '-c:v', 'libx264',
-    '-preset', 'veryfast',
-    '-b:v', `${bitrate}k`,
-    '-maxrate', `${bitrate * 1.5}k`,
-    '-bufsize', `${bitrate * 2}k`,
-    '-pix_fmt', 'yuv420p',
-    '-g', '60',
-    '-s', resolution,
-    '-r', fps.toString(),
-    '-c:a', 'aac',
-    '-b:a', '128k',
-    '-ar', '44100',
+    '-c:v', 'copy',
+    '-c:a', 'copy',
     '-f', 'flv',
     rtmpUrl
   ];
@@ -239,8 +213,7 @@ async function startStream(streamId) {
     }
     return {
       success: true,
-      message: 'Stream started successfully',
-      isAdvancedMode: stream.use_advanced_settings
+      message: 'Stream started successfully'
     };
   } catch (error) {
     addStreamLog(streamId, `Failed to start stream: ${error.message}`);
